@@ -10,3 +10,22 @@
 - nodejs and python IS NOT ALLOWED for this problem set, as well as problem set 2
 - INDIVIDUAL
 */
+
+#include <stdio.h>
+#include <fstream>
+#include <string>
+
+int main(){
+    // init vars & config
+    int range = 0, threads = 1;
+    std::ifstream file("config.txt");
+    std::string key;
+    while (file >> key) {
+        if (key == "range") file >> range;
+        else if (key == "threads") file >> threads;
+    }
+    // implement sieve of eratosthenes
+    std::vector<bool> isComposite(range + 1, false);
+
+
+}
