@@ -26,6 +26,17 @@ int main(){
     }
     // implement sieve of eratosthenes
     std::vector<bool> isComposite(range + 1, false);
-
-
+    isComposite[0] = true;
+    isComposite[1] = true;
+    for (int i = 2; i * i <= range; i++){
+        for (int j = i * i; j<=range; j+=i){
+            isComposite[j] = true;
+        }
+    }
+    // okay so the end result here SHOULD be sieve completed.
+    for (const auto& num : isComposite) {
+        if (!isComposite[num]) {
+            std::cout << num << " ";
+        }
+    }
 }
