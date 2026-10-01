@@ -19,9 +19,25 @@ division scheme (NOT INCLUDED)
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <thread>
+
+// idea is have each thread have its own mini vector bool, then merge afterwards.
+std::vector<bool> sieve(int id, int range_begin, int range_end){
+  std::vector<bool> isComposite(range_end + 1, false);
+  isComposite[0] = true;
+  isComposite[1] = true;
+
+  for (int i = range_begin; i * i <= range_end; i++) {
+    for (int j = i * i; j <= range_end; j += i) {
+      isComposite[j] = true;
+    }
+  }
+
+  return isComposite;
+}
 
 int main() {
-  
+
   // init 
   int range = 0, threads = 1;
   std::ifstream file("config.txt");
@@ -32,19 +48,9 @@ int main() {
     else if (key == "threads")
       file >> threads;
   }
-
-  // setup of bool vector
-  std::vector<bool> isComposite(range + 1, false);
-  isComposite[0] = true;
-  isComposite[1] = true;
-
-  // sieve
-  for (int i = 2; i * i <= range; i++) {
-    for (int j = i * i; j <= range; j += i) {
-      isComposite[j] = true;
-    }
-  }
-
+  
+  //place holder
+  std::vector<bool> isComposite(2, false);
   // okay so the end result here SHOULD be sieve completed.
   for (int i = 2; i <= range; i++) {
     if (!isComposite[i]) {
