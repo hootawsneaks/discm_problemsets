@@ -21,7 +21,8 @@ division scheme (NOT INCLUDED)
 #include <string>
 
 int main() {
-  // init vars & config
+  
+  // init 
   int range = 0, threads = 1;
   std::ifstream file("config.txt");
   std::string key;
@@ -31,15 +32,19 @@ int main() {
     else if (key == "threads")
       file >> threads;
   }
-  // implement sieve of eratosthenes
+
+  // setup of bool vector
   std::vector<bool> isComposite(range + 1, false);
   isComposite[0] = true;
   isComposite[1] = true;
+
+  // sieve
   for (int i = 2; i * i <= range; i++) {
     for (int j = i * i; j <= range; j += i) {
       isComposite[j] = true;
     }
   }
+
   // okay so the end result here SHOULD be sieve completed.
   for (int i = 2; i <= range; i++) {
     if (!isComposite[i]) {
