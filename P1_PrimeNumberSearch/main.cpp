@@ -32,13 +32,12 @@ std::vector<bool> sieve(int id, int range_begin, int range_end){
       isComposite[j] = true;
     }
   }
-
   return isComposite;
 }
 
 int main() {
 
-  // init 
+  // init range and threads
   int range = 0, threads = 1;
   std::ifstream file("config.txt");
   std::string key;
@@ -48,7 +47,20 @@ int main() {
     else if (key == "threads")
       file >> threads;
   }
-  
+
+  if (threads > range){
+    int excess = threads - range;
+    // given the excess, it should all go to the first/last thread. for example: 10 threads 9 range. 2 numbers go to that.. wait.
+  }
+  else if (threads == range){
+
+  }
+  else{
+
+  }
+
+  for(int i = 1; i <= range; i += )
+
   //place holder
   std::vector<bool> isComposite(2, false);
   // okay so the end result here SHOULD be sieve completed.
