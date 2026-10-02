@@ -21,18 +21,22 @@ division scheme (NOT INCLUDED)
 #include <string>
 #include <thread>
 
-// idea is have each thread have its own mini vector bool, then merge afterwards.
-std::vector<bool> sieve(int id, int range_begin, int range_end){
-  std::vector<bool> isComposite(range_end + 1, false);
-  isComposite[0] = true;
-  isComposite[1] = true;
-
-  for (int i = range_begin; i * i <= range_end; i++) {
+std::vector<bool> sieve_job(int id, int range_begin, int range_end, std::vector<int> precompute){
+  std::vector<bool> isComposite(range_end - range_begin + 1, false);
+  for (const auto& i : precompute) {
     for (int j = i * i; j <= range_end; j += i) {
       isComposite[j] = true;
     }
   }
   return isComposite;
+}
+
+void returnResult(int range, std::vector<bool> list){
+  for (int i = 2; i <= range; i++) {
+    if (!list[i]) {
+      std::cout << i << " ";
+    }
+  }
 }
 
 int main() {
@@ -47,26 +51,28 @@ int main() {
     else if (key == "threads")
       file >> threads;
   }
+  
+  std::vector<int> precomp;
+  std::vector<bool> isComposite(range + 1, false);
 
-  if (threads > range){
-    int excess = threads - range;
-    // given the excess, it should all go to the first/last thread. for example: 10 threads 9 range. 2 numbers go to that.. wait.
-  }
-  else if (threads == range){
-
-  }
-  else{
-
-  }
-
-  for(int i = 1; i <= range; i += )
-
-  //place holder
-  std::vector<bool> isComposite(2, false);
-  // okay so the end result here SHOULD be sieve completed.
-  for (int i = 2; i <= range; i++) {
-    if (!isComposite[i]) {
-      std::cout << i << " ";
+  // precompute
+  for (int i = 2; i * i <= range; i++) {
+    for (int j = i * i; j * j <= range; j += i) {
+      isComposite[j] = true;
     }
   }
+
+  for (int i = 2; i * i <= range; i++) {
+    if (!isComposite[i]) {
+      precomp.push_back(i);
+    }
+  }
+
+  for (const auto& i: precomp){
+    std::cout << i << std::endl;
+  }
+
+  // returnResult(range, isComposite);
 }
+
+
