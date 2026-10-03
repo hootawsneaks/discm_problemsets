@@ -41,8 +41,16 @@ int main(){
     for(int i = 2; i * i <= range; i++){
         divisors.push_back(i);
     }
-    for (const auto& list: primecheck_job_scheme1(1, 2, range, divisors)){
-        std::cout << list << ' ';
+
+    // job to split threads
+    if (threads <= 0){
+        std::cout << "Threads cannot be less than 1." << std::endl;
+    }
+    else if (threads >= 1){
+        
+    }
+    else {
+        primecheck_job_scheme1(1, 2, 100, divisors);
     }
     std::cout << std::endl;
 }
