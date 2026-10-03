@@ -20,6 +20,7 @@ division scheme (NOT INCLUDED)
 #include <iostream>
 #include <string>
 #include <thread>
+#include <vector>
 
 std::vector<bool> sieve_job(int id, int range_begin, int range_end, std::vector<int> precompute){
   std::vector<bool> isComposite(range_end - range_begin + 1, false);
