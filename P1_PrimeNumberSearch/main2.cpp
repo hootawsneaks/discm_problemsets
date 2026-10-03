@@ -37,29 +37,27 @@ int main(){
 
     thread_list.reserve(threads);
     std::vector<std::vector<int>> results(threads);
-    // precompute division gonna be used
     std::vector<int> divisors;
     for(int i = 2; i * i <= range; i++){
+        //std::cout << i << std::endl;
         divisors.push_back(i);
     }
 
     // job to split threads
     int segment = (range - 1) / threads;
-    int id = 1;
+    int id = 0;
     if (threads <= 0){
         std::cout << "Threads cannot be less than 1." << std::endl;
     }
     else if (threads >= 1){
         for(int i = 2; i <= range; i += segment + 1){
             if(i + segment >= range){
-                //std::cout << i << " " << range << std::endl;
-                //primecheck_job_scheme1(id++, i, range, divisors, results);
-                thread_list.emplace_back(primecheck_job_scheme1, id++, i, range, divisors, results);
+                //std::cout << i << " "<< range << "\n";
+                thread_list.emplace_back(primecheck_job_scheme1, id++, i, range, divisors, std::ref(results));
             }
             else{
-                //std::cout << i << " " << i + segment << std::endl;
-                //primecheck_job_scheme1(id++, i, i + segment, divisors, results);
-                thread_list.emplace_back(primecheck_job_scheme1, id++, i, i + segment, divisors, results);
+                //std::cout << i << " "<< i + segment << "\n";
+                thread_list.emplace_back(primecheck_job_scheme1, id++, i, i + segment, divisors, std::ref(results));
             }
         }
         for(auto& th : thread_list) th.join();
@@ -77,7 +75,7 @@ int main(){
         std::cout << std::endl;
     }
     else {
-
+        // something
     }
     return 0;
 }
