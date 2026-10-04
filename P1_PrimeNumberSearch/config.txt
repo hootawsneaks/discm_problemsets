@@ -1,2 +1,2 @@
-range 150
-threads 3
+threads 2
+range 10

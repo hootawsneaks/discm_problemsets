@@ -4,7 +4,7 @@
 #include <thread>
 #include <vector>
 
-void primecheck_job_scheme1(int id, int range_begin, int range_end, std::vector<int> divisors, std::vector<std::vector<int>> &results){
+void primecheck_job_scheme1(int id, int range_begin, int range_end, const std::vector<int>& divisors, std::vector<std::vector<int>> &results){
     std::vector<int> result;
     for (int i = range_begin; i <= range_end; i++){
         for (const auto& div : divisors){
@@ -25,39 +25,58 @@ int main(){
     std::string key;
     std::vector<std::thread> thread_list;
     int threads = 1, range = 0;
+    long buffer = 0;
+
+    // todo.. robust-er stuffs.
     while (file >> key){
+        file >> buffer;
         if (key == "range") {
-            file >> range;
+            if (buffer < 0 || buffer > INT_MAX){
+                range = -1;
+            }
+            else {
+                range = buffer;
+            }
         }
         else if (key == "threads") {
-            file >> threads;
+            if (buffer < 1 || buffer > INT_MAX){
+                threads = -1;
+            }
+            else {
+                threads = buffer;
+            }
         }
     }
-    // add input testing here
 
-    thread_list.reserve(threads);
-    std::vector<std::vector<int>> results(threads);
-    std::vector<int> divisors;
-    for(int i = 2; i * i <= range; i++){
-        //std::cout << i << std::endl;
-        divisors.push_back(i);
-    }
-
-    // job to split threads
     int segment = (range - 1) / threads;
     int id = 0;
     if (threads <= 0){
-        std::cout << "Threads cannot be less than 1." << std::endl;
+        std::cout << "Invalid thread value." << std::endl;
     }
-    else if (threads >= 1){
+    else if (range < 0){
+        std::cout << "Invalid range value." << std::endl;
+    }
+    else if (range == 2){
+        std::cout << "2" << std::endl;
+    }
+    else if (range == 3){
+        std::cout << "2 3" << std::endl;
+    }
+    else {
+        thread_list.reserve(threads);
+        std::vector<std::vector<int>> results(threads);
+        std::vector<int> divisors;
+
+        for(int i = 2; i <= range / i; i++){
+            divisors.push_back(i);
+        }
+
         for(int i = 2; i <= range; i += segment + 1){
             if(i + segment >= range){
-                //std::cout << i << " "<< range << "\n";
-                thread_list.emplace_back(primecheck_job_scheme1, id++, i, range, divisors, std::ref(results));
+                thread_list.emplace_back(primecheck_job_scheme1, id++, i, range, std::cref(divisors), std::ref(results));
             }
             else{
-                //std::cout << i << " "<< i + segment << "\n";
-                thread_list.emplace_back(primecheck_job_scheme1, id++, i, i + segment, divisors, std::ref(results));
+                thread_list.emplace_back(primecheck_job_scheme1, id++, i, i + segment, std::cref(divisors), std::ref(results));
             }
         }
         for(auto& th : thread_list) th.join();
@@ -73,9 +92,6 @@ int main(){
         std::sort(all.begin(), all.end());
         for (const auto& r : all) std::cout << r << " ";
         std::cout << std::endl;
-    }
-    else {
-        // something
     }
     return 0;
 }

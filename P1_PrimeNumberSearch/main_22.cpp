@@ -1,0 +1,100 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <thread>
+#include <vector>
+#include <atomic>
+
+void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors, std::vector<int> &results){
+    int result;
+    for (const auto& div : divisors){
+        if(number % div == 0 && number != div){
+            break;
+        }
+        else if(div == divisors.back()){
+            result = number;
+            results[id] = std::move(result);
+        }
+    }
+} 
+
+
+int main(){
+    std::ifstream file("config.txt");
+    std::string key;
+    std::vector<std::thread> thread_list;
+    int threads = 1, range = 0;
+    long buffer = 0;
+
+    // todo.. robust-er stuffs.
+    while (file >> key){
+        file >> buffer;
+        if (key == "range") {
+            if (buffer < 0 || buffer > INT_MAX){
+                range = -1;
+            }
+            else {
+                range = buffer;
+            }
+        }
+        else if (key == "threads") {
+            if (buffer < 1 || buffer > INT_MAX){
+                threads = -1;
+            }
+            else {
+                threads = buffer;
+            }
+        }
+    }
+
+    if (threads <= 0){
+        std::cout << "Invalid thread value." << std::endl;
+    }
+    else if (range < 0){
+        std::cout << "Invalid range value." << std::endl;
+    }
+    else if (range == 2){
+        std::cout << "2" << std::endl;
+    }
+    else if (range == 3){
+        std::cout << "2 3" << std::endl;
+    }
+    else {
+        int id = 0;
+        std::vector<int> results(range);
+        std::vector<int> divisors;
+        thread_list.reserve(threads);
+
+        for(int i = 2; i <= range / i; i++){
+            divisors.push_back(i);
+        }
+
+        for(int i = 2; i <= range; i += threads){
+            if(i + threads > range){
+                for (int j = i; j <= range; j++){
+                    thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results));
+                }
+                for (auto& th : thread_list) th.join();
+                thread_list.clear();
+            }
+            else {
+                for (int j = i; j < i + threads; j++){
+                    thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results));
+                }
+                for (auto& th : thread_list) th.join();
+                thread_list.clear();
+            }
+        }
+
+        // the finale
+        size_t total = 0;
+        std::sort(results.begin(), results.end());
+        for (const auto& r : results){
+            if (r != 0){
+                std::cout << r << " ";
+            }
+        }
+        std::cout << std::endl;
+    }
+    return 0;
+}
