@@ -3,6 +3,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <climits>
+#include <algorithm>
 
 void primecheck_job_scheme1(int id, int range_begin, int range_end, const std::vector<int>& divisors, std::vector<std::vector<int>> &results){
     std::vector<int> result;

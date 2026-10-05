@@ -4,6 +4,8 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <climits>
+#include <algorithm>
 
 void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors, std::vector<int> &results){
     int result;
