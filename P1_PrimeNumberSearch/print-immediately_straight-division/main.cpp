@@ -64,8 +64,6 @@ int main(){
         }
     }
 
-    int segment = (range - 1) / threads;
-    int id = 0;
     if (threads <= 0){
         std::cout << "Invalid thread value." << std::endl;
     }
@@ -79,6 +77,8 @@ int main(){
         std::cout << "2 3" << std::endl;
     }
     else {
+        int segment = (range - 1) / threads;
+        int id = 0;
         thread_list.reserve(threads);
         std::vector<std::vector<int>> results(threads);
         std::vector<int> divisors;
