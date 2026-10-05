@@ -1,2 +1,0 @@
-threads 2
-range 10

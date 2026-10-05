@@ -5,6 +5,14 @@
 #include <vector>
 #include <climits>
 #include <algorithm>
+#include <syncstream>
+#include <chrono>
+#include <format>
+
+std::string stamp(){
+    auto ms = std::chrono::floor<std::chrono::milliseconds>(std::chrono::system_clock::now());
+    return std::format("{:%Y-%m-%d %H:%M:%S}", ms);
+}
 
 void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors, std::vector<int> &results){
     int result;
@@ -15,6 +23,12 @@ void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors
         else if(div == divisors.back()){
             result = number;
             results[id] = std::move(result);
+            {
+                auto now = std::chrono::system_clock::now();
+                auto ms = std::chrono::floor<std::chrono::milliseconds>(now);
+                // compiling with mac libc++ clang needs '-fexperimental-library' flag. alternative is mutex
+                std::osyncstream(std::cout) << "(" << std::format("{:%H:%M:%S}", ms) << ")" << " Thread ID: " << id << " found prime: " << number << "\n";
+            }
         }
     }
 } 
@@ -69,25 +83,38 @@ int main(){
         for(int i = 2; i <= range / i; i++){
             divisors.push_back(i);
         }
+        std::cout << "Start: " << stamp() << "\n";
+        // start the timer
+        auto start = std::chrono::steady_clock::now();
 
         for(int i = 2; i <= range; i += threads){
             if(i + threads > range){
+                id = 0;
                 for (int j = i; j <= range; j++){
                     thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results));
                 }
                 for (auto& th : thread_list) th.join();
-                thread_list.clear();
             }
             else {
+                id = 0;
                 for (int j = i; j < i + threads; j++){
                     thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results));
                 }
                 for (auto& th : thread_list) th.join();
-                thread_list.clear();
             }
+            thread_list.clear();
         }
+        // stop the clock
+        auto end = std::chrono::steady_clock::now();
+        std::string end_stamp = stamp();
+        auto time_elapsed = end - start;
+        std::chrono::duration<double, std::milli> ms = end - start;
+        std::cout << "End: " << end_stamp << "\n";
+        std::cout << "Elapsed: " << ms.count() << " ms\n";
 
         // the finale
+        // excluded cus i think not needed..?
+        /*
         size_t total = 0;
         std::sort(results.begin(), results.end());
         for (const auto& r : results){
@@ -95,7 +122,8 @@ int main(){
                 std::cout << r << " ";
             }
         }
-        std::cout << std::endl;
+        */
+       std::cout << std::endl;
     }
     return 0;
 }
