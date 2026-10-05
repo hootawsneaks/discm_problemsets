@@ -53,7 +53,7 @@ int main(){
             }
         }
         else if (key == "threads") {
-            if (buffer < 1 || buffer > INT_MAX){
+            if (buffer < 0 || buffer > INT_MAX){
                 threads = -1;
             }
             else {
@@ -62,7 +62,7 @@ int main(){
         }
     }
 
-    if (threads <= 0){
+    if (threads < 0){
         std::cout << "Invalid thread value." << std::endl;
     }
     else if (range < 0){
@@ -87,7 +87,12 @@ int main(){
         // start the timer
         auto start = std::chrono::steady_clock::now();
 
-        for(int i = 2; i <= range; i += threads){
+        // 0 threads: just run on main thread
+        if (threads == 0){
+            for (int j = 2; j <= range; j++) primecheck_job_scheme2(id++, j, divisors, results);
+        }
+
+        for(int i = 2; threads > 0 && i <= range; i += threads){
             if(i + threads > range){
                 id = 0;
                 for (int j = i; j <= range; j++){

@@ -48,7 +48,7 @@ int main(){
             }
         }
         else if (key == "threads") {
-            if (buffer < 1 || buffer > INT_MAX){
+            if (buffer < 0 || buffer > INT_MAX){
                 threads = -1;
             }
             else {
@@ -57,7 +57,7 @@ int main(){
         }
     }
 
-    if (threads <= 0){
+    if (threads < 0){
         std::cout << "Invalid thread value." << std::endl;
     }
     else if (range < 0){
@@ -70,10 +70,10 @@ int main(){
         std::cout << "2 3" << std::endl;
     }
     else {
-        int segment = (range - 1) / threads;
+        int segment = threads > 0 ? (range - 1) / threads : 0;
         int id = 0;
         thread_list.reserve(threads);
-        std::vector<std::vector<int>> results(threads);
+        std::vector<std::vector<int>> results(std::max(threads, 1));
         std::vector<int> divisors;
 
         for(int i = 2; i <= range / i; i++){
@@ -83,7 +83,10 @@ int main(){
         std::cout << "Start: " << stamp() << "\n";
         // start the timer
         auto start = std::chrono::steady_clock::now();
-        for(int i = 2; i <= range; i += segment + 1){
+        // 0 threads: just run on main thread
+        if (threads == 0) primecheck_job_scheme1(0, 2, range, divisors, results);
+
+        for(int i = 2; threads > 0 && i <= range; i += segment + 1){
             if(i + segment >= range){
                 thread_list.emplace_back(primecheck_job_scheme1, id++, i, range, std::cref(divisors), std::ref(results));
             }
