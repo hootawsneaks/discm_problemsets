@@ -29,6 +29,10 @@ void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors
 
 int main(){
     std::ifstream file("config.txt");
+    if (!file.is_open()){
+        std::cout << "Could not open config.txt." << std::endl;
+        return 1;
+    }
     std::string key;
     std::vector<std::thread> thread_list;
     int threads = 1, range = 0;
@@ -36,7 +40,10 @@ int main(){
 
     // todo.. robust-er stuffs.
     while (file >> key){
-        file >> buffer;
+        if (!(file >> buffer)){
+            std::cout << "Invalid value for '" << key << "' in config.txt." << std::endl;
+            return 1;
+        }
         if (key == "range") {
             if (buffer < 0 || buffer > INT_MAX){
                 range = -1;
@@ -62,10 +69,14 @@ int main(){
         std::cout << "Invalid range value." << std::endl;
     }
     else if (range == 2){
+        std::cout << "Start: " << stamp() << "\n";
         std::cout << "2" << std::endl;
+        std::cout << "End: " << stamp() << "\n";
     }
     else if (range == 3){
+        std::cout << "Start: " << stamp() << "\n";
         std::cout << "2 3" << std::endl;
+        std::cout << "End: " << stamp() << "\n";
     }
     else {
         int id = 0;
