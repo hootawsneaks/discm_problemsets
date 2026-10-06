@@ -14,8 +14,9 @@ std::string stamp(){
     return std::format("{:%Y-%m-%d %H:%M:%S}", ms);
 }
 
-void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors, std::vector<int> &results){
+void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors, std::vector<int> &results, int threads){
     int result;
+    int display_id;
     for (const auto& div : divisors){
         if(number % div == 0 && number != div){
             break;
@@ -23,11 +24,12 @@ void primecheck_job_scheme2(int id, int number, const std::vector<int>& divisors
         else if(div == divisors.back()){
             result = number;
             results[id] = std::move(result);
+            if (threads == 0) display_id = 0; else display_id = id % threads;
             {
                 auto now = std::chrono::system_clock::now();
                 auto ms = std::chrono::floor<std::chrono::milliseconds>(now);
                 // compiling with mac libc++ clang needs '-fexperimental-library' flag. alternative is mutex
-                std::osyncstream(std::cout) << "(" << std::format("{:%H:%M:%S}", ms) << ")" << " Thread ID: " << id << " found prime: " << number << "\n";
+                std::osyncstream(std::cout) << "(" << std::format("{:%H:%M:%S}", ms) << ")" << " Thread ID: " << display_id << " found prime: " << number << "\n";
             }
         }
     }
@@ -89,26 +91,25 @@ int main(){
 
         // 0 threads: just run on main thread
         if (threads == 0){
-            for (int j = 2; j <= range; j++) primecheck_job_scheme2(id++, j, divisors, results);
+            for (int j = 2; j <= range; j++) primecheck_job_scheme2(id++, j, divisors, results, threads);
         }
 
         for(int i = 2; threads > 0 && i <= range; i += threads){
             if(i + threads > range){
-                id = 0;
                 for (int j = i; j <= range; j++){
-                    thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results));
+                    thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results), threads);
                 }
                 for (auto& th : thread_list) th.join();
             }
             else {
-                id = 0;
                 for (int j = i; j < i + threads; j++){
-                    thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results));
+                    thread_list.emplace_back(primecheck_job_scheme2, id++, j, std::cref(divisors), std::ref(results), threads);
                 }
                 for (auto& th : thread_list) th.join();
             }
             thread_list.clear();
         }
+
         // stop the clock
         auto end = std::chrono::steady_clock::now();
         std::string end_stamp = stamp();
