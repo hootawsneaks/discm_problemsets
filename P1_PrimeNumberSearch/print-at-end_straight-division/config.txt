@@ -1,2 +1,2 @@
-threads 4
-range 100000
+threads 12
+range 10000

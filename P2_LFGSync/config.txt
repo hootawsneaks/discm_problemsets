@@ -1,0 +1,6 @@
+instances penis
+num_tank 5
+num_healer 5
+num_dps 5
+t1 3
+t2 6

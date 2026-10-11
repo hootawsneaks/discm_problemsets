@@ -1,0 +1,38 @@
+# P2 Looking For Group Syncronization
+
+This is a synchronization problem.
+- Tasked to make LFG dungeon queuing of an MMORPG
+- n instances max that can be concurrently active, so there can only be n max number of parties currently in a dungeon
+- standard party of 5 is 1 tank, 1 healer, 3 DPS
+- solution should not result in deadlocks
+- solution should not result in starvation
+- it is assumed that input values arrived at the same time
+- time value t1 t2, where t1 represents fastest clear time of a dungeon instances and t2 is the slower clear time of a dungeon instance.
+- For ease of testing t2 <= 15.
+
+## Input
+- n - maximum number of concurrent instances
+- t - number of tank players in the queue
+- h - number of healers in the queue
+- d - number of DPS players in the queue
+- t1 - minimum amount of time before an instance is finished
+- t2- maximum amount of time before an instance is finished
+- any programming language except java or nodejs
+
+## Output
+- should updated what parties come in and come out
+- if party in instance it should say active
+- instance is empty status should say empty
+- in the end summary of how many parties an instance served and total time served
+
+## Deliverables
+- Source code
+- video demo
+- source code + build/compilation steps
+- slides containing the following:
+	- possible deadlock and starvation explanation
+	- synchronization mechanisms to solve problem
+
+
+--------------------------------------------
+- compile with make. so learn make basically.
