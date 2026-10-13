@@ -4,6 +4,8 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <random>
+#include <vector>
 
 std::mutex mtx;
 
@@ -22,6 +24,7 @@ void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps){
                 break;
             }
         }
+        // todo wait rng.
 
     }
 }
@@ -34,6 +37,8 @@ int main(){
     }
     // init
     std::string key;
+    std::random_device rd;
+    std::mt19937 gen(rd());
     long buffer = 0;
     // input
     int instances;
@@ -69,6 +74,9 @@ int main(){
             t2 = buffer;
         }
     }
+
+    // assume everything initialized here
+    std::uniform_int_distribution<int> distrib(t1, t2);
 
 
     
