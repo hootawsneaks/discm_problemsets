@@ -36,3 +36,27 @@ This is a synchronization problem.
 
 --------------------------------------------
 - compile with make. so learn make basically.
+
+
+
+oct 13 2026
+goal: implement a 3 queue idea and find what issues to run into.
+thinking:
+- no producer, only consumer (as is).
+- the problem right now is mostly just grabbing a thing at the same time by 2 instances.
+- also preventing busy waiting via semaphors corresponding to how many available instances there are.
+	- do i need to, though? theres an assumption that there would be one 'scheduler', but technically each instance can just do shit on their own.
+clarifications:
+- what even is a synchronization problem?
+	- a synchronization problem refers to when multiple processes are accessing one chunk of memory (reading, writing), and solutions on how to resolve overwriting/ data corruption/ non-deterministic resolution.
+
+task 1: making instances.
+
+breakdown: all instances do is decrement and wait a certain time thats it. 
+they would essentially only have 2 states. available/unavailable. and their only actions are:
+1. signal
+2. wait.
+
+question is who would be doing the decrement. Them? 
+let each instance be a thread. It will be working inside a function.
+first check themselves if they are empty, if not then grab a lock, then check each variable (tank healers dps) if possible to fit another if not return. otherwise decrement, isEmpty = true and concede the lock. then wait for a bit then isEmpty = false once more.

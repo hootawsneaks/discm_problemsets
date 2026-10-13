@@ -1,6 +1,30 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <mutex>
+#include <thread>
+#include <chrono>
+
+std::mutex mtx;
+
+void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps){
+    bool isEmpty = true;
+    while(isEmpty){
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            if(num_dps == 3 && num_tank == 1 && num_healer == 1){
+                num_dps -= 3;
+                num_tank -= 1;
+                num_healer -= 1;
+                isEmpty = false;
+            }
+            else{
+                break;
+            }
+        }
+
+    }
+}
 
 int main(){
     std::ifstream file("config.txt");
@@ -45,6 +69,9 @@ int main(){
             t2 = buffer;
         }
     }
+
+
+    
 
     return 0;
 }
