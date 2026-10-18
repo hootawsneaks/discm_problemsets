@@ -9,11 +9,15 @@
 
 std::mutex mtx;
 
-void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps){
+void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t1, int t2){
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> distrib(t1, t2);
     bool isEmpty = true;
+    // main loop aka critical-ish section..
     while(isEmpty){
         {
-            std::lock_guard<std::mutex> lock(mtx);
+            std::unique_lock<std::mutex> lock(mtx);
             if(num_dps == 3 && num_tank == 1 && num_healer == 1){
                 num_dps -= 3;
                 num_tank -= 1;
@@ -24,8 +28,9 @@ void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps){
                 break;
             }
         }
-        // todo wait rng.
-
+        // wait until they finish their dungeon run.
+        std::this_thread::sleep_for(std::chrono::seconds(distrib(gen)));
+        isEmpty = true;
     }
 }
 
@@ -37,8 +42,6 @@ int main(){
     }
     // init
     std::string key;
-    std::random_device rd;
-    std::mt19937 gen(rd());
     long buffer = 0;
     // input
     int instances;
@@ -75,8 +78,7 @@ int main(){
         }
     }
 
-    // assume everything initialized here
-    std::uniform_int_distribution<int> distrib(t1, t2);
+    // assume everything initialized beyond here
 
 
     

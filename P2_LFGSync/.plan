@@ -60,3 +60,18 @@ they would essentially only have 2 states. available/unavailable. and their only
 question is who would be doing the decrement. Them? 
 let each instance be a thread. It will be working inside a function.
 first check themselves if they are empty, if not then grab a lock, then check each variable (tank healers dps) if possible to fit another if not return. otherwise decrement, isEmpty = true and concede the lock. then wait for a bit then isEmpty = false once more.
+
+oct 18 2026
+implemented the random wait thing i think.
+instances correspond to threads (i think)
+instances cannot be less than 1.
+1 instance means no threadding required. just run it on main
+greater than 1 instance should be handled with main
+
+was thinking about implementing a separate thread that keeps watch of who gets what.
+i was also wondering how id do that.
+probably conditional variables. i heard those can signal and alert specific threads.
+considering id would be unique (initialized with a for loop where each iteration corresponds to one thread)
+no pooling needed considering that threads will not be constantly spawned.
+
+idea: have all threads wait for a go signal from another thread instead of all racing for the mutex lock. then assigning would be easier. cons would be higher overhead...
