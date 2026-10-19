@@ -9,19 +9,20 @@
 #include <condition_variable>
 #include <algorithm>
 
-std::mutex mtx;
-std::condition_variable cv;
+std::mutex mtx, mtx2;
+std::condition_variable cv, cv2;
+
 int target_id = -1;
 bool ready = false;
+int num_working = 0;
 bool done = false;
 
 void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t1, int t2){
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> distrib(t1, t2);
-    bool isEmpty = true;
-    // main loop aka critical-ish section..
-    while(isEmpty){
+    bool isWorking = true;
+    while(isWorking){
         {
             std::unique_lock<std::mutex> lock(mtx);
 
@@ -29,22 +30,37 @@ void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t
                 return ready && (target_id == id);
             });
 
+            {
+                std::unique_lock<std::mutex> lock(mtx2);
+                ++num_working;
+            }
+            cv2.notify_all();
+
             if(num_dps >= 3 && num_tank >= 1 && num_healer >= 1){
                 num_dps -= 3;
                 num_tank -= 1;
                 num_healer -= 1;
-                isEmpty = false;
                 ready = false;
+                {
+                    std::unique_lock<std::mutex> lock(mtx2);
+                    --num_working;
+                }
+                cv2.notify_all();
             }
             else{
+                isWorking = false;
                 ready = false;
                 done = true;
+                {
+                    std::unique_lock<std::mutex> lock(mtx2);
+                    --num_working;
+                }
+                cv2.notify_all();
                 break;
             }
         }
         // wait until they finish their dungeon run.
         std::this_thread::sleep_for(std::chrono::seconds(distrib(gen)));
-        isEmpty = true;
     }
 }
 
@@ -58,6 +74,8 @@ void signaling_worker(int instances){
    // mootex
    while (!done){
     {
+        std::unique_lock<std::mutex> lock(mtx2);
+        cv2.wait(lock, [&] { return (num_working < instances); });
         std::unique_lock<std::mutex> lock(mtx);
         target_id = std::distance(patience_list.begin(), std::min_element(patience_list.begin(), patience_list.end()));
         patience_list[target_id] = 0;
