@@ -6,8 +6,14 @@
 #include <chrono>
 #include <random>
 #include <vector>
+#include <condition_variable>
+#include <algorithm>
 
 std::mutex mtx;
+std::condition_variable cv;
+int target_id = -1;
+bool ready = false;
+bool done = false;
 
 void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t1, int t2){
     std::random_device rd;
@@ -18,19 +24,49 @@ void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t
     while(isEmpty){
         {
             std::unique_lock<std::mutex> lock(mtx);
-            if(num_dps == 3 && num_tank == 1 && num_healer == 1){
+
+            cv.wait(lock, [&] {
+                return ready && (target_id == id);
+            });
+
+            if(num_dps >= 3 && num_tank >= 1 && num_healer >= 1){
                 num_dps -= 3;
                 num_tank -= 1;
                 num_healer -= 1;
                 isEmpty = false;
+                ready = false;
             }
             else{
+                ready = false;
+                done = true;
                 break;
             }
         }
         // wait until they finish their dungeon run.
         std::this_thread::sleep_for(std::chrono::seconds(distrib(gen)));
         isEmpty = true;
+    }
+}
+
+void signaling_worker(int instances){
+   std::vector<int> patience_list(instances);
+   // init
+   for (int &i : patience_list){
+        i = 0;
+   }
+   
+   // mootex
+   while (!done){
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        target_id = std::distance(patience_list.begin(), std::min_element(patience_list.begin(), patience_list.end()));
+        patience_list[target_id] = 0;
+        for (int i = 0; i <= (int)patience_list.size(); ++i){
+            if (i != target_id) patience_list[i]++;
+        }
+        ready = true;
+    }
+    cv.notify_all();
     }
 }
 
@@ -42,6 +78,7 @@ int main(){
     }
     // init
     std::string key;
+    std::vector<std::thread> thread_list;
     long buffer = 0;
     // input
     int instances;
@@ -78,8 +115,13 @@ int main(){
         }
     }
 
-    // assume everything initialized beyond here
+    // input checks
 
+    // "bootstrapping"
+     for(int i = 0; i < instances; ++i){
+        thread_list.emplace_back(instance_worker, i, std::ref(num_tank), std::ref(num_healer), std::ref(num_dps), t1, t2);
+    }
+    thread_list.emplace_back(signaling_worker, instances);
 
     
 
