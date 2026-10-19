@@ -1,4 +1,4 @@
-instances penis
+instances 5
 num_tank 5
 num_healer 5
 num_dps 5
