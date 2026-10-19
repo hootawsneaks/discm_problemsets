@@ -73,18 +73,20 @@ void signaling_worker(int instances){
    
    // mootex
    while (!done){
-    {
-        std::unique_lock<std::mutex> lock(mtx2);
-        cv2.wait(lock, [&] { return (num_working < instances); });
-        std::unique_lock<std::mutex> lock(mtx);
-        target_id = std::distance(patience_list.begin(), std::min_element(patience_list.begin(), patience_list.end()));
-        patience_list[target_id] = 0;
-        for (int i = 0; i <= (int)patience_list.size(); ++i){
-            if (i != target_id) patience_list[i]++;
+        {
+            std::unique_lock<std::mutex> lock(mtx);
+            target_id = std::distance(patience_list.begin(), std::min_element(patience_list.begin(), patience_list.end()));
+            patience_list[target_id] = 0;
+            for (int i = 0; i <= (int)patience_list.size(); ++i){
+                if (i != target_id) patience_list[i]++;
+            }
+            ready = true;
         }
-        ready = true;
-    }
-    cv.notify_all();
+        cv.notify_all();
+        {
+            std::unique_lock<std::mutex> lock(mtx2);
+            cv2.wait( lock, [&] { return ( num_working < instances ); });
+        }
     }
 }
 
