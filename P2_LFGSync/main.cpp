@@ -64,6 +64,7 @@ void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t
         std::this_thread::sleep_for(std::chrono::seconds(distrib(gen)));
         {
             std::unique_lock<std::mutex> lock(mtx);
+            working_list[id] = 0;
             --num_working;
         }
     }
@@ -84,8 +85,7 @@ void signaling_worker(int instances, std::vector<uint8_t>& working_list){
             }
             if (num_working == instances){
                 {
-                    std::unique_lock<std::mutex> lock2(mtx2);
-                    cv2.wait( lock2, [&] { return ( num_working < instances ); });
+                    cv2.wait( lock, [&] { return ( num_working < instances ); });
                 }
             }
 
