@@ -21,13 +21,14 @@
 #include <vector>
 #include <ranges>
 
-std::mutex mtx, mtx2;
+std::mutex mtx;
 std::condition_variable cv, cv2;
 bool ready = false;
 bool done = false;
 int num_served = 0;
 int num_working = 0;
-int target_id = -1;
+int target_id = -2;
+int signal_iter = 0;
 
 void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t1, int t2, std::vector<uint8_t>& working_list){
     std::random_device rd;
@@ -38,76 +39,103 @@ void instance_worker(int id, int& num_tank, int& num_healer, int& num_dps, int t
         {
             std::unique_lock<std::mutex> lock(mtx);
 
+            if (done) {
+                ready = false;
+                cv2.notify_all();
+                break;
+            }
+
+            // -1 meaning emergency
             cv.wait(lock, [&] {
-                return ready && (target_id == id);
+                return (ready && (target_id == id)) || ( target_id == -1 );
             });
+
+            ready = false;
 
             if(num_dps >= 3 && num_tank >= 1 && num_healer >= 1){
                 num_dps -= 3;
                 num_tank -= 1;
                 num_healer -= 1;
                 ++num_working;
+                std::osyncstream(std::cout) << "[WORKER] Number of instances working: " << num_working << "\n";
                 ++num_served;
                 working_list[id] = 1;
-                ready = false;
+                std::osyncstream(std::cout) << "INSTANCE [" << id << "] FILLED\n";
+                
             }
             else{
                 isWorking = false;
-                done = true;
-                ready = false;
-                cv.notify_all();
+                cv2.notify_all();
                 continue;
             }
         }
-        // wait until they finish their dungeon run.
+        // notify when a worker lets go of lock
         cv2.notify_all();
+        // signaler will have the lock if all instances are 'busy'
+         std::osyncstream(std::cout) << "INSTANCE [" << id << "] RUNNING/SLEEPING\n";
         std::this_thread::sleep_for(std::chrono::seconds(distrib(gen)));
         {
             std::unique_lock<std::mutex> lock(mtx);
             working_list[id] = 0;
+            std::osyncstream(std::cout) << "INSTANCE [" << id << "] RUN DONE!\n";
             --num_working;
+            // notify when a worker finished a run
+            cv2.notify_all();
         }
     }
 }
 
-void signaling_worker(int instances, std::vector<uint8_t>& working_list){
+void signaling_worker(int instances, std::vector<uint8_t>& working_list, int& num_tank, int& num_healer, int& num_dps){
    std::vector<int> patience_list(instances, 0);
-   // data race...
    while (true){
-    /* this lock is done so that it can make sure no one is touching the thing before assigning someone a task
-       since working_list is touched by threads, even if the reads dont clash, loops are probably dangerous.
-       the lock should be maintained during the entirety of the choosing of a worker
-    */
         {
             std::unique_lock<std::mutex> lock(mtx);
-            if(done){
-                break;
-            }
+            ++signal_iter;
+
+            if (done) break;
+
+            std::osyncstream(std::cout) << "[SIGNALER] Number of instances working: " << num_working << "\n";
             if (num_working == instances){
                 {
+                    std::osyncstream(std::cout) << "SIGNALER SLEEPING... " << num_working << "\n";
                     cv2.wait( lock, [&] { return ( num_working < instances ); });
+                    std::osyncstream(std::cout) << "SIGNALER AWAKENING!!! " << num_working << "\n";
                 }
             }
 
-            target_id = static_cast<int>(std::ranges::max_element(patience_list) - patience_list.begin());
-            if (working_list[target_id] == 1){
+            if(!(num_dps >= 3 && num_tank >= 1 && num_healer >= 1)){
                 target_id = -1;
+                done = true;
             }
             else{
+                auto ids = std::views::iota(0, instances);
+                target_id = *std::ranges::max_element(ids, {}, [&](int i) {
+                    return working_list[i] == 1 ? -1 : patience_list[i];
+                });
+                std::osyncstream(std::cout) << "SIGNALER CHOOSES INSTANCE " << target_id << "\n";
                 patience_list[target_id] = 0;
+
+                const int n = static_cast<int>(patience_list.size());
+                for (int i = 0; i < n; ++i){
+                    if ( i != target_id && !working_list[i] ) {
+                        patience_list[i]++;
+                        std::osyncstream(std::cout) << "PATIENCE++: " << i << ", total patience: " << patience_list[i] << "\n";
+                    }
+                }
             }
-            const int n = static_cast<int>(patience_list.size());
-            for (int i = 0; i < n; ++i){
-                if ( i != target_id && !working_list[i] ) patience_list[i]++;
-            }
-            std::cout << "== LIST OF INSTANCES: ==\n";
+
+            std::osyncstream(std::cout)  << "== LIST OF INSTANCES: ==\n";
             for (int i = 0; i < instances; ++i){
-                std::cout << "Instance " << i << " (" << (working_list[i] ? "Active" : "Empty") << ")\n";
-                std::cout << std::endl;
+                std::osyncstream(std::cout)  << "Instance " << i << " (" << (working_list[i] ? "Active" : "Empty") << ")\n";
+                std::osyncstream(std::cout)  << std::endl;
             }
             ready = true;
         }
         cv.notify_all();
+        {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv2.wait( lock, [&] { return ( !ready ); });
+        }
     }
 }
 
@@ -165,9 +193,17 @@ int main(){
      for(int i = 0; i < instances; ++i){
         thread_list.emplace_back(instance_worker, i, std::ref(num_tank), std::ref(num_healer), std::ref(num_dps), t1, t2, std::ref(working_list));
     }
-    thread_list.emplace_back(signaling_worker, instances, std::ref(working_list));
+    thread_list.emplace_back(signaling_worker, instances, std::ref(working_list), std::ref(num_tank), std::ref(num_healer), std::ref(num_dps));
     for(auto& t : thread_list){
         if (t.joinable()) t.join();
     }
+
+    // output results
+    std::cout << "num served: " << num_served << "\n";
+    std::cout << "tank plrs remaining " << num_tank << "\n";
+    std::cout << "healers plrs remaining " << num_healer << "\n";
+    std::cout << "dps plrs remaining " << num_dps << std::endl;
+    std::cout << "total signaler iterations " << signal_iter << std::endl;
+
     return 0;
 }

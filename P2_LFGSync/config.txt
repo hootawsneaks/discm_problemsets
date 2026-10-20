@@ -1,6 +1,6 @@
 instances 5
-num_tank 5
-num_healer 5
-num_dps 5
-t1 3
-t2 6
+num_tank 10
+num_healer 10
+num_dps 30
+t1 1
+t2 2
